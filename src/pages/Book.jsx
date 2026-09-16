@@ -17,6 +17,7 @@ import {
   ShieldCheck,
   Timer,
   User,
+  Wallet,
 } from "lucide-react";
 import { customService, owner, services } from "../data/services";
 import {
@@ -25,7 +26,15 @@ import {
   formatDayLong,
   startOfToday,
 } from "../lib/schedule";
-import { NO_BUDGET, budgetOptions, formatUSD, formatXAF } from "../lib/pricing";
+import {
+  NO_BUDGET,
+  budgetOptions,
+  effectivePrice,
+  formatUSD,
+  formatXAFAmount,
+  hasHostingPrice,
+  usdFromXAF,
+} from "../lib/pricing";
 import { useBookings } from "../context/BookingContext";
 import StepIndicator from "../components/StepIndicator";
 import DateTimePicker from "../components/DateTimePicker";
@@ -46,6 +55,7 @@ const emptyForm = {
   budget: NO_BUDGET,
   notes: "",
   whatsapp: true,
+  hasHosting: false,
 };
 
 const validate = (form, isCustom) => {
@@ -120,6 +130,8 @@ export default function Book() {
           phone: form.phone.trim(),
           company: form.company.trim(),
         },
+        hasHosting: form.hasHosting,
+        withHostingXAF: service.withHostingXAF ?? null,
         budget: form.budget,
         notes: form.notes.trim(),
         whatsapp: form.whatsapp,
@@ -228,7 +240,13 @@ export default function Book() {
             </div>
           </div>
 
-          <Summary service={service} date={date} slot={slot} step={step} />
+          <Summary
+            service={service}
+            date={date}
+            slot={slot}
+            step={step}
+            hasHosting={form.hasHosting}
+          />
         </div>
       </div>
     </div>
@@ -345,13 +363,14 @@ const inputClass = (error) =>
   );
 
 function StepDetails({ form, setForm, errors, setErrors, isCustom, service }) {
-  const budgets = budgetOptions(service);
+  const pricing = effectivePrice(service, form.hasHosting);
+  const budgets = budgetOptions(service, pricing.ceiling);
 
   // Switching service can leave a band that no longer exists selected.
   useEffect(() => {
     if (!budgets.includes(form.budget)) setForm((f) => ({ ...f, budget: NO_BUDGET }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [service?.id]);
+  }, [service?.id, form.hasHosting]);
 
   const update = (key) => (e) => {
     const value = e.target.type === "checkbox" ? e.target.checked : e.target.value;
@@ -409,7 +428,7 @@ function StepDetails({ form, setForm, errors, setErrors, isCustom, service }) {
             label="Rough budget"
             hint={
               service?.startingAt != null
-                ? `${service.name} starts at ${formatUSD(service)}${service.priceSuffix ?? ""} — a range is enough.`
+                ? `${service.name} ${pricing.reduced ? "costs" : "starts at"} ${pricing.usd}${pricing.suffix} (${pricing.xaf}${pricing.suffix}) — a range is enough.`
                 : "A range is enough — it helps me scope realistically."
             }
           >
@@ -454,6 +473,36 @@ function StepDetails({ form, setForm, errors, setErrors, isCustom, service }) {
         </div>
       </div>
 
+      {hasHostingPrice(service) && (
+        <label
+          className={cn(
+            "mt-5 flex cursor-pointer items-start gap-3 rounded-lg border p-4 transition-colors",
+            form.hasHosting
+              ? "border-brand-500 bg-brand-50"
+              : "border-line bg-canvas hover:border-brand-300",
+          )}
+        >
+          <input
+            type="checkbox"
+            checked={form.hasHosting}
+            onChange={update("hasHosting")}
+            className="mt-0.5 h-4 w-4 shrink-0 accent-[#1d4ed8]"
+          />
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-semibold text-ink-900">
+              I already have hosting and a domain
+            </span>
+            <span className="block text-xs text-ink-600">
+              Then you only pay for the build. Your price becomes{" "}
+              <span className="font-semibold text-brand-700">
+                {formatXAFAmount(service.withHostingXAF)}
+              </span>{" "}
+              ({usdFromXAF(service.withHostingXAF)}) instead of {formatUSD(service)}.
+            </span>
+          </span>
+        </label>
+      )}
+
       <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-lg border border-line bg-canvas p-4 transition-colors hover:border-brand-300">
         <input
           type="checkbox"
@@ -482,7 +531,8 @@ function StepDetails({ form, setForm, errors, setErrors, isCustom, service }) {
   );
 }
 
-function Summary({ service, date, slot, step }) {
+function Summary({ service, date, slot, step, hasHosting }) {
+  const pricing = effectivePrice(service, hasHosting);
   const rows = [
     {
       Icon: Briefcase,
@@ -542,20 +592,25 @@ function Summary({ service, date, slot, step }) {
               <span className="font-semibold text-emerald-600">Free</span>
             </div>
             <div className="flex items-start justify-between gap-3">
-              <span className="text-ink-600">Project from</span>
+              <span className="text-ink-600">{pricing.reduced ? "Project" : "Project from"}</span>
               <span className="text-right">
                 <span className="block font-display text-lg font-bold text-ink-900">
-                  {formatUSD(service)}
-                  {service?.priceSuffix}
+                  {pricing.usd}
+                  {pricing.suffix}
                 </span>
-                {formatXAF(service) && (
+                {pricing.xaf && (
                   <span className="block text-xs font-medium text-ink-600">
-                    {formatXAF(service)}
-                    {service?.priceSuffix}
+                    {pricing.xaf}
+                    {pricing.suffix}
                   </span>
                 )}
               </span>
             </div>
+            {pricing.reduced && (
+              <p className="rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700">
+                Build-only price — you are providing the hosting and domain.
+              </p>
+            )}
           </div>
 
           <p className="text-xs leading-relaxed text-ink-400">
@@ -573,12 +628,24 @@ function Summary({ service, date, slot, step }) {
 function Confirmation({ booking, onRebook }) {
   const [y, m, d] = booking.date.split("-").map(Number);
   const when = new Date(y, m - 1, d);
+  const quoted = effectivePrice(
+    {
+      startingAt: booking.startingAt,
+      priceMax: booking.priceMax,
+      priceSuffix: booking.priceSuffix,
+      withHostingXAF: booking.withHostingXAF,
+    },
+    booking.hasHosting,
+  );
+
   const lines = [
     `Hello ${owner.shortName}, I just booked a consultation.`,
     "",
     `Reference: ${booking.reference}`,
     `Service: ${booking.serviceName}`,
     `When: ${formatDayLong(when)} at ${booking.startLabel}`,
+    `Price: ${quoted.usd}${quoted.suffix} (${quoted.xaf}${quoted.suffix})`,
+    ...(booking.hasHosting ? [`I already have hosting and a domain.`] : []),
     `Name: ${booking.customer.name}`,
     `Phone: ${booking.customer.phone}`,
     ...(booking.notes ? ["", `Details: ${booking.notes}`] : []),
@@ -641,7 +708,18 @@ function Confirmation({ booking, onRebook }) {
 
           <dl className="grid gap-5 p-6 sm:grid-cols-2">
             {[
-              { Icon: Briefcase, k: "Project", v: booking.serviceName, s: `Delivery ${booking.timeline}` },
+              {
+        Icon: Briefcase,
+        k: "Project",
+        v: booking.serviceName,
+        s: `Delivery ${booking.timeline}`,
+      },
+      {
+        Icon: Wallet,
+        k: booking.hasHosting ? "Your price" : "Estimate from",
+        v: `${quoted.usd}${quoted.suffix}`,
+        s: quoted.xaf ? `${quoted.xaf}${quoted.suffix}` : null,
+      },
               { Icon: CalendarDays, k: "Date", v: formatDayLong(when) },
               { Icon: Clock, k: "Time", v: `${booking.startLabel} – ${booking.endLabel}` },
               { Icon: Timer, k: "Call length", v: `${booking.duration} minutes` },

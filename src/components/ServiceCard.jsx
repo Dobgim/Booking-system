@@ -1,7 +1,7 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
 import { ArrowRight, Check, Clock, Timer } from "lucide-react";
-import { formatUSD, formatXAF } from "../lib/pricing";
+import { formatUSD, formatXAF, formatXAFAmount, hasHostingPrice } from "../lib/pricing";
 import { Badge, Button, ServiceIcon, cn } from "./ui";
 
 export default function ServiceCard({ service, index = 0, onSelect, selected = false }) {
@@ -90,6 +90,12 @@ export default function ServiceCard({ service, index = 0, onSelect, selected = f
                 )}
               </span>
             </div>
+
+            {hasHostingPrice(service) && (
+              <p className="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-xs font-medium text-brand-700">
+                {formatXAFAmount(service.withHostingXAF)} if you already have hosting and a domain
+              </p>
+            )}
           </div>
 
           {selectable ? (

@@ -3,7 +3,7 @@ import { ArrowLeft, Download, FileText, MessageCircle, Printer } from "lucide-re
 import { owner, services } from "../data/services";
 import { useBookings } from "../context/BookingContext";
 import { bookingDateTime, formatDayLong } from "../lib/schedule";
-import { formatUSD, formatXAF } from "../lib/pricing";
+import { effectivePrice } from "../lib/pricing";
 import { Badge, Button } from "../components/ui";
 
 /** Digits only, for wa.me links. */
@@ -18,17 +18,15 @@ const initialsOf = (name = "") => {
 };
 
 const priceParts = (booking) => {
-  const service = services.find((s) => s.id === booking.serviceId);
-  const shape = service ?? {
+  // Fall back to what the booking recorded, so an invoice still prices
+  // correctly after a service is renamed or repriced.
+  const shape = services.find((s) => s.id === booking.serviceId) ?? {
     startingAt: booking.startingAt ?? null,
     priceMax: booking.priceMax,
     priceSuffix: booking.priceSuffix,
+    withHostingXAF: booking.withHostingXAF,
   };
-  return {
-    usd: formatUSD(shape),
-    xaf: formatXAF(shape),
-    suffix: shape.priceSuffix ?? "",
-  };
+  return effectivePrice(shape, booking.hasHosting);
 };
 
 export default function Invoice() {
@@ -52,7 +50,7 @@ export default function Invoice() {
   }
 
   const when = bookingDateTime(booking);
-  const { usd, xaf, suffix } = priceParts(booking);
+  const { usd, xaf, suffix, reduced } = priceParts(booking);
   const issued = new Date(booking.createdAt ?? Date.now());
 
   const whatsappText = [
@@ -208,6 +206,11 @@ export default function Invoice() {
                       Delivery {booking.timeline}. Confirmed as a fixed quote after the
                       consultation.
                     </p>
+                    {reduced && (
+                      <p className="mt-2 text-xs font-medium text-brand-700">
+                        Build-only rate — client provides hosting and domain.
+                      </p>
+                    )}
                   </td>
                   <td className="py-4 text-right align-top">
                     <span className="block font-display text-base font-bold text-ink-900">

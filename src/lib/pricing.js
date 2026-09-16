@@ -33,14 +33,48 @@ export const formatXAF = (service) => {
 /** True when the price is a range rather than a single figure. */
 export const isRange = (service) => Boolean(service?.priceMax);
 
+/** 80000 -> "80 000 FCFA" (already in CFA, so no conversion) */
+export const formatXAFAmount = (n) => `${n.toLocaleString("en-US").replace(/,/g, " ")} FCFA`;
+
+/** 80000 CFA -> "$133" */
+export const usdFromXAF = (n) => usd(Math.round(n / USD_TO_XAF));
+
+/** Does this service have a reduced price for clients who bring their own hosting? */
+export const hasHostingPrice = (service) => service?.withHostingXAF != null;
+
+/**
+ * What the client actually pays. Clients who already own hosting and a domain
+ * pay the flat `withHostingXAF` price where the service defines one, because
+ * setup and first-year hosting are no longer part of the job.
+ */
+export const effectivePrice = (service, clientHasHosting = false) => {
+  if (clientHasHosting && hasHostingPrice(service)) {
+    const amount = service.withHostingXAF;
+    return {
+      usd: usdFromXAF(amount),
+      xaf: formatXAFAmount(amount),
+      suffix: "",
+      reduced: true,
+      ceiling: Math.round(amount / USD_TO_XAF),
+    };
+  }
+  return {
+    usd: formatUSD(service),
+    xaf: formatXAF(service),
+    suffix: service?.priceSuffix ?? "",
+    reduced: false,
+    ceiling: service?.priceMax ?? service?.startingAt ?? null,
+  };
+};
+
 export const NO_BUDGET = "Not sure yet";
 
 /**
  * Budget bands for a service, capped at what that service actually costs —
  * there is no point offering a $1,000 band on a $250 build.
  */
-export const budgetOptions = (service) => {
-  const ceiling = service?.priceMax ?? service?.startingAt;
+export const budgetOptions = (service, ceilingOverride = null) => {
+  const ceiling = ceilingOverride ?? service?.priceMax ?? service?.startingAt;
   if (!ceiling) return [NO_BUDGET, "Under $250", "$250 – $1,000", "Over $1,000"];
 
   // Round the midpoint to something that reads like a real figure.
