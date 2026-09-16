@@ -1,9 +1,9 @@
 import { Routes, Route, useLocation, Link } from "react-router-dom";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, MotionConfig, motion } from "framer-motion";
 import Navbar from "./components/Navbar";
 import Footer from "./components/Footer";
 import Toasts from "./components/Toasts";
-import { Backdrop, Button } from "./components/ui";
+import { Backdrop, Button, ScrollProgress } from "./components/ui";
 import Home from "./pages/Home";
 import Services from "./pages/Services";
 import Book from "./pages/Book";
@@ -42,8 +42,9 @@ export default function App() {
   const location = useLocation();
 
   return (
-    <>
+    <MotionConfig reducedMotion="user">
       <Backdrop />
+      <ScrollProgress />
       <Navbar />
       <AnimatePresence mode="wait">
         <Routes location={location} key={location.pathname}>
@@ -123,6 +124,6 @@ export default function App() {
       </AnimatePresence>
       <Footer />
       <Toasts />
-    </>
+    </MotionConfig>
   );
 }

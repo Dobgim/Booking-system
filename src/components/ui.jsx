@@ -1,5 +1,12 @@
-import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import {
+  motion,
+  useInView,
+  useMotionValue,
+  useScroll,
+  useSpring,
+  useTransform,
+} from "framer-motion";
+import { useEffect, useRef, useState } from "react";
 import {
   Building2,
   CalendarClock,
@@ -182,5 +189,137 @@ export function Card({ className = "", hover = true, children, ...props }) {
     >
       {children}
     </div>
+  );
+}
+
+
+/** Thin progress bar pinned to the top of the window. */
+export function ScrollProgress() {
+  const { scrollYProgress } = useScroll();
+  const width = useSpring(scrollYProgress, { stiffness: 140, damping: 26, restDelta: 0.001 });
+  return (
+    <motion.div
+      aria-hidden
+      style={{ scaleX: width }}
+      className="fixed inset-x-0 top-0 z-[60] h-0.5 origin-left bg-brand-600"
+    />
+  );
+}
+
+/** Counts up to `value` the first time it scrolls into view. */
+export function CountUp({ value, duration = 1.4, prefix = "", suffix = "", decimals = 0 }) {
+  const ref = useRef(null);
+  const inView = useInView(ref, { once: true, margin: "-60px" });
+  const [shown, setShown] = useState(0);
+
+  useEffect(() => {
+    if (!inView) return;
+    let frame;
+    const start = performance.now();
+    const tick = (now) => {
+      const t = Math.min(1, (now - start) / (duration * 1000));
+      // Ease-out so it decelerates into the final figure.
+      setShown(value * (1 - Math.pow(1 - t, 3)));
+      if (t < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [inView, value, duration]);
+
+  return (
+    <span ref={ref}>
+      {prefix}
+      {shown.toLocaleString("en-US", {
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      })}
+      {suffix}
+    </span>
+  );
+}
+
+/** Headline that reveals one word at a time. */
+export function WordReveal({ text, className = "", delay = 0 }) {
+  return (
+    <span className={className}>
+      {text.split(" ").map((word, i) => (
+        <span key={`${word}-${i}`} className="inline-block overflow-hidden align-bottom">
+          <motion.span
+            className="inline-block"
+            initial={{ y: "110%" }}
+            animate={{ y: 0 }}
+            transition={{ duration: 0.7, delay: delay + i * 0.06, ease: [0.22, 1, 0.36, 1] }}
+          >
+            {word}
+            {" "}
+          </motion.span>
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** Continuously scrolling strip. Slows right down on hover so it can be read. */
+export function Marquee({ items, speed = 38 }) {
+  const doubled = [...items, ...items];
+  const [hovered, setHovered] = useState(false);
+  return (
+    <div
+      className="relative overflow-hidden py-2 [mask-image:linear-gradient(90deg,transparent,#000_8%,#000_92%,transparent)]"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+    >
+      <motion.div
+        className="flex w-max gap-3"
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ duration: hovered ? speed * 6 : speed, repeat: Infinity, ease: "linear" }}
+      >
+        {doubled.map((item, i) => (
+          <span
+            key={i}
+            className="shrink-0 rounded-full border border-line bg-white px-4 py-2 text-sm font-medium text-ink-700"
+          >
+            {item}
+          </span>
+        ))}
+      </motion.div>
+    </div>
+  );
+}
+
+/** Card that tips slightly towards the pointer. */
+export function Tilt({ children, className = "", max = 7 }) {
+  const ref = useRef(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [max, -max]), {
+    stiffness: 220,
+    damping: 20,
+  });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-max, max]), {
+    stiffness: 220,
+    damping: 20,
+  });
+
+  const onMove = (e) => {
+    const rect = ref.current?.getBoundingClientRect();
+    if (!rect) return;
+    x.set((e.clientX - rect.left) / rect.width - 0.5);
+    y.set((e.clientY - rect.top) / rect.height - 0.5);
+  };
+
+  return (
+    <motion.div
+      ref={ref}
+      onMouseMove={onMove}
+      onMouseLeave={() => {
+        x.set(0);
+        y.set(0);
+      }}
+      style={{ rotateX, rotateY, transformPerspective: 900 }}
+      className={className}
+    >
+      {children}
+    </motion.div>
   );
 }

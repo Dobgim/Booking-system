@@ -36,13 +36,25 @@
   scroll-behavior: smooth;
 }
 
+/*
+ * `clip` rather than `hidden`: it stops sideways scrolling without turning the
+ * root into a scroll container, which would break every `position: sticky`.
+ * Set on html too — on mobile, body alone does not hold the page still.
+ */
+html {
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+}
+
 body {
   margin: 0;
+  overflow-x: clip;
+  overscroll-behavior-x: none;
+  max-width: 100%;
   background: var(--color-surface);
   color: var(--color-ink-900);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
 }
 
 ::selection {

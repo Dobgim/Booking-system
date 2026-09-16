@@ -11,7 +11,17 @@ import {
   Sparkles,
 } from "lucide-react";
 import { about, owner, services } from "../data/services";
-import { Badge, Button, Card, Reveal, SectionHeading, ServiceIcon } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CountUp,
+  Marquee,
+  Reveal,
+  SectionHeading,
+  ServiceIcon,
+  Tilt,
+} from "../components/ui";
 
 export default function About() {
   return (
@@ -110,7 +120,16 @@ export default function About() {
           {about.facts.map((f, i) => (
             <Reveal key={f.label} delay={i * 0.07}>
               <div className="px-2 py-3 text-center sm:text-left">
-                <p className="font-display text-3xl font-bold text-brand-600">{f.value}</p>
+                <p className="font-display text-3xl font-bold text-brand-600">
+                  {/^[\d.]+$/.test(String(f.value).replace(/[+ –-]/g, "")) ? (
+                    <CountUp
+                      value={parseFloat(String(f.value))}
+                      suffix={String(f.value).replace(/^[\d.]+/, "")}
+                    />
+                  ) : (
+                    f.value
+                  )}
+                </p>
                 <p className="mt-1 text-xs text-ink-600">{f.label}</p>
               </div>
             </Reveal>
@@ -127,6 +146,7 @@ export default function About() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2">
             {about.why.map((w, i) => (
               <Reveal key={w.title} delay={i * 0.08}>
+                <Tilt className="h-full">
                 <Card className="flex h-full gap-4 p-6">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
                     <Check size={18} />
@@ -136,6 +156,7 @@ export default function About() {
                     <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{w.text}</p>
                   </div>
                 </Card>
+                </Tilt>
               </Reveal>
             ))}
           </div>
@@ -170,6 +191,12 @@ export default function About() {
             ))}
           </div>
         </section>
+
+        <Reveal>
+          <div className="pb-8">
+            <Marquee items={about.stack.flatMap((g) => g.items)} speed={46} />
+          </div>
+        </Reveal>
 
         {/* ---------------- How I work ---------------- */}
         <section className="py-12">

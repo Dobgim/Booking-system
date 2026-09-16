@@ -424,7 +424,7 @@ export const about = {
   ],
   facts: [
     { value: "3 – 4", label: "Days to deliver a website" },
-    { value: "13+", label: "Types of system I build" },
+    { value: "15+", label: "Types of system I build" },
     { value: "1", label: "Person accountable — me" },
     { value: "30", label: "Days of free support after launch" },
   ],

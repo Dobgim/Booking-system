@@ -12,8 +12,20 @@ import {
 } from "lucide-react";
 import { customService, faqs, guarantees, owner, process, services } from "../data/services";
 import ServiceCard from "../components/ServiceCard";
+import HeroShowcase from "../components/HeroShowcase";
 import { formatUSD, formatXAF } from "../lib/pricing";
-import { Badge, Button, Card, Reveal, SectionHeading, ServiceIcon } from "../components/ui";
+import {
+  Badge,
+  Button,
+  Card,
+  CountUp,
+  Marquee,
+  Reveal,
+  SectionHeading,
+  ServiceIcon,
+  Tilt,
+  WordReveal,
+} from "../components/ui";
 
 export default function Home() {
   const [openFaq, setOpenFaq] = useState(0);
@@ -42,10 +54,12 @@ export default function Home() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.65, delay: 0.08, ease: [0.22, 1, 0.36, 1] }}
-              className="mt-6 font-display text-4xl font-bold leading-[1.1] tracking-tight text-ink-900 sm:text-5xl lg:text-[3.4rem]"
+              className="mt-6 font-display text-4xl font-bold leading-[1.15] tracking-tight text-ink-900 sm:text-5xl lg:text-[3.4rem]"
             >
-              Websites that do the work,
-              <span className="block text-brand-600">not just sit there</span>
+              <WordReveal text="Websites that do the work," delay={0.1} />
+              <span className="block text-brand-600">
+                <WordReveal text="not just sit there" delay={0.35} />
+              </span>
             </motion.h1>
 
             <motion.p
@@ -91,61 +105,37 @@ export default function Home() {
             </motion.div>
           </div>
 
-          {/* Consultation card */}
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 24 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.22, ease: [0.22, 1, 0.36, 1] }}
-            className="mx-auto w-full max-w-md"
-          >
-            <div className="rounded-2xl border border-line bg-white p-7 shadow-[0_24px_60px_-28px_rgb(15_23_42/0.25)]">
-              <div className="flex items-center gap-4">
-                <span className="flex h-14 w-14 items-center justify-center rounded-xl bg-brand-600 font-display text-lg font-bold text-white">
-                  {owner.initials}
-                </span>
-                <div className="min-w-0">
-                  <p className="truncate font-display text-base font-bold text-ink-900">
-                    {owner.name}
+          <HeroShowcase />
+        </div>
+      </section>
+
+
+      {/* ---------------- Proof band ---------------- */}
+      <section className="px-5 sm:px-8">
+        <div className="mx-auto max-w-6xl">
+          <div className="grid gap-4 rounded-2xl border border-line bg-white p-6 sm:grid-cols-2 lg:grid-cols-4">
+            {[
+              { value: 3, suffix: " – 4", label: "Days to deliver a website" },
+              { value: 15, suffix: "+", label: "Kinds of system I build" },
+              { value: 5, suffix: " min", label: "That is all the first call takes" },
+              { value: 30, suffix: " days", label: "Free support after launch" },
+            ].map((stat, i) => (
+              <Reveal key={stat.label} delay={i * 0.08}>
+                <div className="px-2 py-3">
+                  <p className="font-display text-3xl font-bold text-brand-600">
+                    <CountUp value={stat.value} suffix={stat.suffix} />
                   </p>
-                  <p className="text-sm text-ink-600">{owner.role}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-ink-600">{stat.label}</p>
                 </div>
-              </div>
+              </Reveal>
+            ))}
+          </div>
 
-              <p className="mt-6 text-sm leading-relaxed text-ink-600">{owner.bio}</p>
-
-              <dl className="mt-6 space-y-3 border-t border-line pt-6 text-sm">
-                <div className="flex items-center gap-3">
-                  <Phone size={16} className="shrink-0 text-brand-600" />
-                  <dt className="sr-only">Phone</dt>
-                  <dd>
-                    <a href={owner.phoneHref} className="font-medium text-ink-900 hover:text-brand-700">
-                      {owner.phone}
-                    </a>
-                  </dd>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Mail size={16} className="shrink-0 text-brand-600" />
-                  <dt className="sr-only">Email</dt>
-                  <dd className="min-w-0">
-                    <a
-                      href={`mailto:${owner.email}`}
-                      className="block truncate font-medium text-ink-900 hover:text-brand-700"
-                    >
-                      {owner.email}
-                    </a>
-                  </dd>
-                </div>
-              </dl>
-
-              <Button as={Link} to="/book" className="mt-6 w-full" size="lg">
-                Book a time with me
-                <ArrowRight size={16} />
-              </Button>
-              <p className="mt-3 text-center text-xs text-ink-400">
-                Free, no obligation, just 5 minutes
-              </p>
+          <Reveal delay={0.2}>
+            <div className="mt-6">
+              <Marquee items={services.map((s) => s.name)} />
             </div>
-          </motion.div>
+          </Reveal>
         </div>
       </section>
 
@@ -303,6 +293,7 @@ export default function Home() {
           <div className="mt-12 grid gap-5 sm:grid-cols-2">
             {guarantees.map((g, i) => (
               <Reveal key={g.title} delay={i * 0.08}>
+                <Tilt className="h-full">
                 <Card className="flex h-full gap-4 p-6">
                   <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-600">
                     <Check size={18} />
@@ -312,6 +303,7 @@ export default function Home() {
                     <p className="mt-1.5 text-sm leading-relaxed text-ink-600">{g.text}</p>
                   </div>
                 </Card>
+                </Tilt>
               </Reveal>
             ))}
           </div>
