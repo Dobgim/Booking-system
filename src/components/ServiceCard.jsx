@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Link } from "react-router-dom";
-import { ArrowRight, Check, Clock, Timer } from "lucide-react";
+import { ArrowRight, Check, Clock, Plus, Timer } from "lucide-react";
 import { formatUSD, formatXAF, formatXAFAmount, hasHostingPrice } from "../lib/pricing";
 import { ServiceArt } from "./art";
 import { Badge, Button, ServiceIcon, cn } from "./ui";
@@ -19,7 +19,9 @@ export default function ServiceCard({ service, index = 0, onSelect, selected = f
       className="h-full"
     >
       <Wrapper
-        {...(selectable ? { onClick: () => onSelect(service), type: "button" } : {})}
+        {...(selectable
+          ? { onClick: () => onSelect(service), type: "button", "aria-pressed": selected }
+          : {})}
         className={cn(
           "group relative flex h-full w-full flex-col overflow-hidden rounded-2xl border bg-white text-left transition-all duration-300",
           selected
@@ -132,15 +134,21 @@ export default function ServiceCard({ service, index = 0, onSelect, selected = f
                   selected ? "text-brand-700" : "text-ink-400 group-hover:text-brand-700",
                 )}
               >
-                {selected ? "Selected" : "Choose this service"}
-                <ArrowRight
-                  size={15}
-                  className="transition-transform duration-300 group-hover:translate-x-1"
-                />
+                {selected ? (
+                  <>
+                    <Check size={15} />
+                    Added — tap to remove
+                  </>
+                ) : (
+                  <>
+                    <Plus size={15} />
+                    {service.askMonths ? "Add — choose how many months" : "Add to my request"}
+                  </>
+                )}
               </p>
             ) : (
               <Button as={Link} to={`/book?service=${service.id}`} className="mt-4 w-full">
-                Book a free consultation
+                Request this service
                 <ArrowRight size={15} />
               </Button>
             )}

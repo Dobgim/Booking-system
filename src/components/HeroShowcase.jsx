@@ -154,11 +154,11 @@ export default function HeroShowcase() {
         </div>
 
         <Button as={Link} to="/book" className="mt-4 w-full">
-          Book a time with me
+          Start a request
           <ArrowRight size={15} />
         </Button>
         <p className="mt-2.5 text-center text-[11px] text-ink-400">
-          Free, no obligation, just 5 minutes
+          Free quote, no obligation
         </p>
       </motion.div>
     </div>

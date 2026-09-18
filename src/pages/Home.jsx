@@ -70,7 +70,7 @@ export default function Home() {
             >
               I am {owner.name} — I build tracking platforms with live maps, banking systems,
               online stores, restaurant sites and mobile apps, then get them found with SEO, Google
-              Ads and Google Business. I also set up foreign numbers and eSIMs. Book a free consultation and leave the call with a clear
+              Ads and Google Business. I also set up foreign numbers and eSIMs. Send me a request and get a clear
               plan and a fixed price.
             </motion.p>
 
@@ -82,7 +82,7 @@ export default function Home() {
             >
               <Button as={Link} to="/book" size="lg">
                 <CalendarCheck size={18} />
-                Book a free consultation
+                Get a free quote
               </Button>
               <Button as={Link} to="/services" size="lg" variant="outline">
                 See what I build
@@ -232,7 +232,7 @@ export default function Home() {
                     variant="outline"
                     className="mt-6 w-full"
                   >
-                    Book a consultation
+                    Request this service
                     <ArrowRight size={15} />
                   </Button>
                 </Card>
@@ -316,7 +316,7 @@ export default function Home() {
           <SectionHeading
             eyebrow="Also available"
             title="The rest of the menu"
-            subtitle="Not sure which one fits? Book a consultation and describe the problem — the right build is part of what we work out."
+            subtitle="Not sure which one fits? Send a request and describe the problem — the right build is part of what we work out."
           />
           <div className="mt-12 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {rest.map((s, i) => (
@@ -428,7 +428,7 @@ export default function Home() {
             <div className="mt-9 flex flex-wrap justify-center gap-3">
               <Button as={Link} to="/book" size="lg" variant="light">
                 <CalendarCheck size={18} />
-                Book a consultation
+                Start a request
               </Button>
               <Button
                 as="a"

@@ -107,17 +107,7 @@ export function BookingProvider({ children }) {
   const cancelBooking = useCallback(
     (id) => {
       setBookings((b) => b.map((x) => (x.id === id ? { ...x, status: "cancelled" } : x)));
-      toast("Appointment cancelled. Your slot has been released.", "info");
-    },
-    [toast],
-  );
-
-  const rescheduleBooking = useCallback(
-    (id, { date, startMinutes }) => {
-      setBookings((b) =>
-        b.map((x) => (x.id === id ? { ...x, date, startMinutes, status: "confirmed" } : x)),
-      );
-      toast("Appointment moved. We sent an updated confirmation.");
+      toast("Request cancelled.", "info");
     },
     [toast],
   );
@@ -131,7 +121,6 @@ export function BookingProvider({ children }) {
       signOut,
       addBooking,
       cancelBooking,
-      rescheduleBooking,
       toasts,
       toast,
       dismissToast,
@@ -144,7 +133,6 @@ export function BookingProvider({ children }) {
       signOut,
       addBooking,
       cancelBooking,
-      rescheduleBooking,
       toasts,
       toast,
       dismissToast,

@@ -323,3 +323,32 @@ export function Tilt({ children, className = "", max = 7 }) {
     </motion.div>
   );
 }
+
+/** Centred dialog on desktop, bottom sheet on phones. Click outside to close. */
+export function Modal({ children, onClose, maxWidth = "max-w-lg" }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      onClick={onClose}
+      className="fixed inset-0 z-[70] flex items-end justify-center bg-ink-900/25 p-4 backdrop-blur-[2px] sm:items-center"
+    >
+      <motion.div
+        initial={{ opacity: 0, y: 30, scale: 0.98 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        exit={{ opacity: 0, y: 18, scale: 0.98 }}
+        transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        onClick={(e) => e.stopPropagation()}
+        role="dialog"
+        aria-modal="true"
+        className={cn(
+          "w-full overflow-hidden rounded-2xl border border-line bg-white shadow-[0_32px_80px_-24px_rgb(15_23_42/0.35)]",
+          maxWidth,
+        )}
+      >
+        {children}
+      </motion.div>
+    </motion.div>
+  );
+}

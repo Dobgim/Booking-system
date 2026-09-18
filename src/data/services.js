@@ -244,6 +244,7 @@ export const services = [
     priceMax: 1000,
     priceSuffix: "/month",
     billing: "monthly",
+    askMonths: true,
     timeline: "Results in 3 – 6 months",
     consultMinutes: 5,
     marketing: true,
@@ -263,7 +264,9 @@ export const services = [
       "Monthly report showing spend against results",
     ],
     startingAt: 443,
-    billing: "one-off",
+    priceSuffix: "/month",
+    billing: "monthly",
+    askMonths: true,
     note: "Your Google ad spend is paid directly to Google and is separate from this fee.",
     timeline: "Live within a week",
     consultMinutes: 5,
@@ -486,13 +489,10 @@ export const faqs = [
   },
   {
     q: "Can you take over a site someone else built?",
-    a: "Yes. Book a consultation and send me the current site. I will tell you plainly whether it is worth fixing or rebuilding.",
+    a: "Yes. Send a request with a link to the current site. I will tell you plainly whether it is worth fixing or rebuilding.",
   },
   {
     q: "How do we communicate during the project?",
     a: "WhatsApp or email, whichever you prefer, plus a preview link that updates as the build progresses.",
   },
 ];
-
-/** Consultation hours: Mon–Sat, 08:00–18:00, on a 15-minute grid. */
-export const OPENING = { start: 8, end: 18, slotMinutes: 15 };

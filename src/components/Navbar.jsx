@@ -4,22 +4,22 @@ import { motion, AnimatePresence } from "framer-motion";
 import { CalendarCheck, Menu, Phone, X } from "lucide-react";
 import { owner } from "../data/services";
 import { useBookings } from "../context/BookingContext";
-import { isUpcoming } from "../lib/schedule";
+import { isActive } from "../lib/schedule";
 import { Button, cn } from "./ui";
 
 const links = [
   { to: "/", label: "Home" },
   { to: "/services", label: "Services" },
   { to: "/about", label: "About" },
-  { to: "/bookings", label: "My Bookings" },
+  { to: "/bookings", label: "My Requests" },
 ];
 
 export default function Navbar() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
-  const { bookings } = useBookings();
+  const { myBookings } = useBookings();
   const { pathname } = useLocation();
-  const upcoming = bookings.filter(isUpcoming).length;
+  const upcoming = myBookings.filter(isActive).length;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 12);
@@ -89,7 +89,7 @@ export default function Navbar() {
           </a>
           <Button as={Link} to="/book" size="sm" className="hidden sm:inline-flex">
             <CalendarCheck size={16} />
-            Book a consultation
+            Start a request
           </Button>
           <button
             onClick={() => setOpen((o) => !o)}
@@ -138,7 +138,7 @@ export default function Navbar() {
               <li className="pt-2">
                 <Button as={Link} to="/book" className="w-full">
                   <CalendarCheck size={16} />
-                  Book a consultation
+                  Start a request
                 </Button>
               </li>
               <li>

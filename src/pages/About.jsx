@@ -67,7 +67,7 @@ export default function About() {
             >
               <Button as={Link} to="/book" size="lg">
                 <CalendarCheck size={18} />
-                Book a free consultation
+                Get a free quote
               </Button>
               <Button as="a" href={owner.phoneHref} size="lg" variant="outline">
                 <Phone size={17} />
@@ -254,7 +254,7 @@ export default function About() {
                 variant="light"
               >
                 <CalendarCheck size={18} />
-                Book a consultation
+                Start a request
               </Button>
               <Button
                 as="a"

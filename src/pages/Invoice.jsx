@@ -1,13 +1,11 @@
 import { Link, useParams } from "react-router-dom";
 import { ArrowLeft, Download, FileText, MessageCircle, Printer } from "lucide-react";
-import { owner, services } from "../data/services";
+import { owner } from "../data/services";
 import { useBookings } from "../context/BookingContext";
-import { bookingDateTime, formatDayLong } from "../lib/schedule";
-import { effectivePrice } from "../lib/pricing";
+import { submittedAt } from "../lib/schedule";
+import { isReduced, itemsOf, orderTotals, priceText, rangeUSD, rangeXAF } from "../lib/order";
+import { whatsappLink } from "../lib/message";
 import { Badge, Button } from "../components/ui";
-
-/** Digits only, for wa.me links. */
-const waNumber = owner.phoneHref.replace(/\D/g, "");
 
 /** "Tabi Sandra" -> "TS", falling back to a single letter for one-word names. */
 const initialsOf = (name = "") => {
@@ -15,18 +13,6 @@ const initialsOf = (name = "") => {
   if (parts.length === 0) return "—";
   if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
-};
-
-const priceParts = (booking) => {
-  // Fall back to what the booking recorded, so an invoice still prices
-  // correctly after a service is renamed or repriced.
-  const shape = services.find((s) => s.id === booking.serviceId) ?? {
-    startingAt: booking.startingAt ?? null,
-    priceMax: booking.priceMax,
-    priceSuffix: booking.priceSuffix,
-    withHostingXAF: booking.withHostingXAF,
-  };
-  return effectivePrice(shape, booking.hasHosting);
 };
 
 export default function Invoice() {
@@ -49,30 +35,10 @@ export default function Invoice() {
     );
   }
 
-  const when = bookingDateTime(booking);
-  const { usd, xaf, suffix, reduced } = priceParts(booking);
-  const issued = new Date(booking.createdAt ?? Date.now());
-
-  const whatsappText = [
-    `Hello ${owner.shortName}, here is my booking.`,
-    ``,
-    `Invoice: ${booking.reference}`,
-    `Service: ${booking.serviceName}`,
-    `Consultation: ${formatDayLong(when)} at ${booking.startLabel}`,
-    `Estimate: ${usd}${suffix}${xaf ? ` (${xaf}${suffix})` : ""}`,
-    ``,
-    `Name: ${booking.customer.name}`,
-    booking.customer.company ? `Business: ${booking.customer.company}` : null,
-    `Phone: ${booking.customer.phone}`,
-    `Email: ${booking.customer.email}`,
-    booking.budget ? `Budget: ${booking.budget}` : null,
-    booking.notes ? `` : null,
-    booking.notes ? `Project details: ${booking.notes}` : null,
-  ]
-    .filter((line) => line !== null)
-    .join("\n");
-
-  const whatsappHref = `https://wa.me/${waNumber}?text=${encodeURIComponent(whatsappText)}`;
+  const items = itemsOf(booking);
+  const totals = orderTotals(items, booking.hasHosting);
+  const issued = submittedAt(booking);
+  const whatsappHref = whatsappLink(booking);
 
   return (
     <div className="px-5 pb-20 pt-32 sm:px-8 sm:pt-40">
@@ -182,61 +148,87 @@ export default function Invoice() {
                 </tr>
               </thead>
               <tbody>
-                <tr className="border-b border-line">
-                  <td className="py-4 align-top">
-                    <p className="font-semibold text-ink-900">
-                      Consultation — {booking.serviceName}
-                    </p>
-                    <p className="mt-1 text-xs text-ink-600">
-                      {formatDayLong(when)} · {booking.startLabel} – {booking.endLabel} ·{" "}
-                      {booking.duration} minute call
-                    </p>
-                  </td>
-                  <td className="py-4 text-right align-top">
-                    <span className="font-semibold text-emerald-600">Free</span>
-                  </td>
-                </tr>
-                <tr>
-                  <td className="py-4 align-top">
-                    <p className="font-semibold text-ink-900">
-                      {booking.serviceName}
-                      <span className="ml-2 text-xs font-normal text-ink-400">estimate only</span>
-                    </p>
-                    <p className="mt-1 text-xs text-ink-600">
-                      Delivery {booking.timeline}. Confirmed as a fixed quote after the
-                      consultation.
-                    </p>
-                    {reduced && (
-                      <p className="mt-2 text-xs font-medium text-brand-700">
-                        Build-only rate — client provides hosting and domain.
-                      </p>
-                    )}
-                  </td>
-                  <td className="py-4 text-right align-top">
-                    <span className="block font-display text-base font-bold text-ink-900">
-                      {usd}
-                      {suffix}
-                    </span>
-                    {xaf && (
-                      <span className="block text-xs font-medium text-ink-600">
-                        {xaf}
-                        {suffix}
-                      </span>
-                    )}
-                  </td>
-                </tr>
+                {items.map((item) => {
+                  const text = priceText(item, booking.hasHosting);
+                  return (
+                    <tr key={item.serviceId} className="border-b border-line">
+                      <td className="py-4 pr-4 align-top">
+                        <p className="font-semibold text-ink-900">{item.name}</p>
+                        <p className="mt-1 text-xs text-ink-600">
+                          {item.custom
+                            ? "Custom work, scoped on our call."
+                            : item.months
+                              ? `${item.months}-month engagement.`
+                              : `Delivery ${item.timeline}.`}
+                        </p>
+                        {isReduced(item, booking.hasHosting) && (
+                          <p className="mt-1.5 text-xs font-medium text-brand-700">
+                            Build-only rate — client provides hosting and domain.
+                          </p>
+                        )}
+                      </td>
+                      <td className="py-4 text-right align-top">
+                        {text ? (
+                          <>
+                            <span className="block whitespace-nowrap font-display text-base font-bold text-ink-900">
+                              {text.usd}
+                            </span>
+                            <span className="block whitespace-nowrap text-xs font-medium text-ink-600">
+                              {text.xaf}
+                            </span>
+                            {text.detail && (
+                              <span className="mt-0.5 block whitespace-nowrap text-[11px] text-ink-400">
+                                {text.detail}
+                              </span>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-sm font-medium text-ink-600">To be quoted</span>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
 
-          <div className="flex items-start justify-between gap-6 border-t-2 border-ink-900 pt-5">
-            <div>
-              <p className="font-display text-base font-bold text-ink-900">Due now</p>
-              <p className="mt-1 text-xs text-ink-600">
-                Nothing is payable to book. The consultation is free.
+          <div className="space-y-3 border-t-2 border-ink-900 pt-5">
+            {totals.oneOff.count > 0 && (
+              <div className="flex items-start justify-between gap-6">
+                <p className="font-display text-base font-bold text-ink-900">Estimated total</p>
+                <p className="text-right">
+                  <span className="block font-display text-2xl font-bold text-ink-900">
+                    {rangeUSD(totals.oneOff.usd)}
+                  </span>
+                  <span className="block text-sm font-medium text-ink-600">
+                    {rangeXAF(totals.oneOff.xaf)}
+                  </span>
+                </p>
+              </div>
+            )}
+            {totals.monthly.count > 0 && (
+              <div className="flex items-start justify-between gap-6">
+                <p className="font-display text-sm font-bold text-ink-900">Monthly services</p>
+                <p className="text-right">
+                  <span className="block font-display text-lg font-bold text-ink-900">
+                    {rangeUSD(totals.monthly.usd)}/month
+                  </span>
+                  <span className="block text-xs font-medium text-ink-600">
+                    {rangeXAF(totals.monthly.xaf)}/month
+                  </span>
+                </p>
+              </div>
+            )}
+            {totals.quoted > 0 && (
+              <p className="text-xs text-ink-600">
+                Plus {totals.quoted} custom item{totals.quoted === 1 ? "" : "s"} to be quoted.
               </p>
-            </div>
-            <p className="font-display text-2xl font-bold text-ink-900">$0.00</p>
+            )}
+            <p className="rounded-lg bg-canvas px-4 py-3 text-xs leading-relaxed text-ink-600">
+              <span className="font-semibold text-ink-900">Nothing is due yet.</span> These are
+              starting prices; you receive a fixed written quote to accept before any work begins.
+            </p>
           </div>
 
           {booking.notes && (
